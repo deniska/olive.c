@@ -68,6 +68,19 @@ int kolibri_wait_event(void) {
     return result;
 }
 
+int kolibri_check_event(void) {
+    int result;
+    __asm__ __volatile__ (
+        "movl $11, %%eax\n"
+        "int $0x40\n"
+        "movl %%eax, %0\n"
+        : "=r" (result)
+        :
+        : "%eax"
+    );
+    return result;
+}
+
 KolibriKeyEvent kolibri_get_key(void) {
     u32 result;
     __asm__ __volatile__ (
@@ -92,4 +105,15 @@ KolibriKeyEvent kolibri_get_key(void) {
     }
 
     return key_event;
+}
+
+void kolibri_wait_for_vsync(void) {
+    __asm__ __volatile__ (
+        "movl $18, %%eax\n"
+        "movl $14, %%ebx\n"
+        "int $0x40\n"
+        :
+        :
+        : "%eax", "%ebx"
+    );
 }
