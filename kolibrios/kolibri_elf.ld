@@ -1,9 +1,20 @@
-ENTRY(_kolibri_start)
+OUTPUT_FORMAT("binary")
 
 SECTIONS {
     . = 0x0;
-    kolibri_header : { *(kolibri_header) }
-    .text : { *(.text) }
-    .data : { *(.data) }
-    .bss : { *(.bss) }
+    .text : {
+        *(_kolibri_header)
+        *(.text)
+    }
+    .data : {
+        *(.rodata)
+        *(.data)
+    }
+    _kolibri_program_end = .;
+    .bss : {
+        *(.bss)
+    }
+    . += 10485760;
+    . = ALIGN(32);
+    _kolibri_stack_top = .;
 }

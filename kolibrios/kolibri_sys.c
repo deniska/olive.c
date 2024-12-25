@@ -1,18 +1,5 @@
 #include "kolibri_sys.h"
 
-/*
-typedef struct {
-	char signature[8];
-	unsigned version;
-	void *start;
-	void* program_end;
-	void* required_memory;
-	void *top_of_the_stack;
-	void *args;
-	void *exe_path;
-} _KolibriHeader;
-*/
-
 void _kolibri_start(void) {
     kolibri_main();
     kolibri_terminate_process();
