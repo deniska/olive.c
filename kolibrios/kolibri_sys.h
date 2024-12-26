@@ -21,6 +21,8 @@ void kolibri_create_window(u32 x, u32 y, u32 xsize, u32 ysize, u32 color, const 
 void kolibri_start_draw(void);
 void kolibri_end_draw(void);
 int kolibri_wait_event(void);
+int kolibri_check_event(void);
+void kolibri_wait_for_vsync(void);
 
 typedef struct {
     bool has_key;
