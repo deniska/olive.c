@@ -8,6 +8,7 @@ SECTIONS {
     }
     .data : {
         *(.rodata)
+        *(.rodata.*)
         *(.data)
     }
     _kolibri_program_end = .;

@@ -42,6 +42,7 @@ Olivec_Canvas vc_render(float dt);
 #define VC_WASM_PLATFORM 0
 #define VC_SDL_PLATFORM 1
 #define VC_TERM_PLATFORM 2
+#define VC_KOLIBRI_PLATFORM 3
 
 #if VC_PLATFORM == VC_SDL_PLATFORM
 #include <stdio.h>
@@ -564,9 +565,17 @@ int main(void)
 #elif VC_PLATFORM == VC_KOLIBRI_PLATFORM
 #include "kolibri_sys.h"
 
+Olivec_Canvas oc = OLIVEC_CANVAS_NULL;
+
+#define VC_WIDTH 960
+#define VC_HEIGHT 720
+
+u8 image_data[VC_WIDTH * VC_HEIGHT * 3] = {0};
+
 void draw_window(void) {
     kolibri_start_draw();
-    kolibri_create_window(0, 0, 320, 240, 0x000000FF, "Hello world");
+    kolibri_create_window(0, 0, VC_WIDTH, VC_HEIGHT, 0x000000FF, VC_TITLE);
+    kolibri_put_image(image_data, 960, 720, 0, 0);
     kolibri_end_draw();
 }
 
@@ -584,11 +593,20 @@ void kolibri_main(void) {
                 KolibriKeyEvent key_event = kolibri_get_key();
             }
         }
-        kolibri_wait_for_vsync();
-        draw_window();
-        vc_render(0.033f);
+        oc = vc_render(0.02f);
+        for (int y = 0; y < VC_HEIGHT; y++) {
+            for (int x = 0; x < VC_WIDTH; x++) {
+                u32 px = OLIVEC_PIXEL(oc, x, y);
+                image_data[0 + (x + y*VC_WIDTH)*3] = OLIVEC_BLUE(px);
+                image_data[1 + (x + y*VC_WIDTH)*3] = OLIVEC_GREEN(px);
+                image_data[2 + (x + y*VC_WIDTH)*3] = OLIVEC_RED(px);
+            }
+        }
+        kolibri_put_image(image_data, 960, 720, 0, 0);
+        kolibri_sleep100(2);
     }
 }
 #else
 #error "Unknown VC platform"
 #endif // VC_SDL_PLATFORM
+

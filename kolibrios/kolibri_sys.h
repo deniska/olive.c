@@ -45,4 +45,24 @@ typedef enum {
     KOLIBRI_EVENT_DEBUG = 9,
 } kolibri_event;
 
+void kolibri_blit(
+        void* pixels, u32 pixels_bytes,
+        int src_x, int src_y, u32 src_w, u32 src_h,
+        int dst_x, int dst_y, u32 dst_w, u32 dst_h);
+
+void kolibri_put_image(u8* pixels_bgr, u16 width, u16 height, u16 x, u16 y);
+void kolibri_sleep100(int hundredth_seconds);
+
+// libc-ish stuff
+
+void *memset(void *s, int c, u32 n);
+
+// math
+
+float sqrtf(float val);
+float sinf(float val);
+float cosf(float val);
+float atan2f(float y, float x);
+void sincosf(float x, float *sin, float *cos);
 #endif
+

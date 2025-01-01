@@ -5,7 +5,7 @@ set -xe
 export PATH=/home/denis/sdk/gcc-13.2.0/bin:$PATH
 
 CFLAGS="-DVC_PLATFORM=3 -O3 -march=pentium3 -m32 -nostdlib -std=c2x -fno-stack-protector -fno-asynchronous-unwind-tables"
-LDFLAGS="-T kolibri_kex.ld"
+LDFLAGS="-T kolibri_kex1.ld"
 
 gcc $CFLAGS -c kolibri_header.s
 gcc $CFLAGS -c kolibri_sys.c
@@ -13,7 +13,7 @@ gcc $CFLAGS -c arith64.c
 
 build_demo() {
     gcc $CFLAGS -I../build -I.. -I. "-DVC_TITLE=\"$1 demo\"" -c ../demos/$1.c
-    gcc $CFLAGS $LDFLAGS -o $1.kex kolibri_header.o $1.o kolibri_sys.o arith64.o
+    gcc $CFLAGS $LDFLAGS -o $1.kex $1.o kolibri_sys.o arith64.o
     mcopy -i programs.img -D o $1.kex ::/$1.kex
 }
 

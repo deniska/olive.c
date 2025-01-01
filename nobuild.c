@@ -1,13 +1,13 @@
 #define NOBUILD_IMPLEMENTATION
 #include "./nobuild.h"
 
-#define COMMON_CFLAGS "-Wall", "-Wextra", "-pedantic", "-std=c11", "-ggdb", "-I.", "-I./build/", "-I./dev-deps/"
+#define COMMON_CFLAGS "-std=c11", "-ggdb", "-I.", "-I./build/", "-I./dev-deps/"
 
 void build_tools(void)
 {
     MKDIRS("build", "tools");
-    CMD("clang", COMMON_CFLAGS, "-o", "./build/tools/png2c", "./tools/png2c.c", "-lm");
-    CMD("clang", COMMON_CFLAGS, "-o", "./build/tools/obj2c", "./tools/obj2c.c", "-lm");
+    CMD("/home/denis/sdk/gcc-13.2.0/bin/gcc", COMMON_CFLAGS, "-o", "./build/tools/png2c", "./tools/png2c.c", "-lm");
+    CMD("/home/denis/sdk/gcc-13.2.0/bin/gcc", COMMON_CFLAGS, "-o", "./build/tools/obj2c", "./tools/obj2c.c", "-lm");
 }
 
 void build_assets(void)
@@ -24,7 +24,7 @@ void build_assets(void)
 
 void build_tests(void)
 {
-    CMD("clang", COMMON_CFLAGS, "-fsanitize=memory", "-o", "./build/test", "test.c", "-lm");
+    CMD("/home/denis/sdk/gcc-13.2.0/bin/gcc", COMMON_CFLAGS, "-o", "./build/test", "test.c", "-lm");
 }
 
 // TODO: move copy_file to nobuild.h
@@ -66,7 +66,7 @@ void copy_file(const char *src_file_path, const char *dst_file_path)
 Pid build_wasm_demo(const char *name)
 {
     Cmd cmd = {
-        .line = cstr_array_make("clang", COMMON_CFLAGS, "-O2", "-fno-builtin", "--target=wasm32", "--no-standard-libraries", "-Wl,--no-entry", "-Wl,--export=vc_render", "-Wl,--export=__heap_base", "-Wl,--allow-undefined", "-o", CONCAT("./build/demos/", name, ".wasm"), "-DVC_PLATFORM=VC_WASM_PLATFORM", CONCAT("./demos/", name, ".c"), NULL)
+        .line = cstr_array_make("/home/denis/sdk/gcc-13.2.0/bin/gcc", COMMON_CFLAGS, "-O2", "-fno-builtin", "--target=wasm32", "--no-standard-libraries", "-Wl,--no-entry", "-Wl,--export=vc_render", "-Wl,--export=__heap_base", "-Wl,--allow-undefined", "-o", CONCAT("./build/demos/", name, ".wasm"), "-DVC_PLATFORM=VC_WASM_PLATFORM", CONCAT("./demos/", name, ".c"), NULL)
     };
     INFO("CMD: %s", cmd_show(cmd));
     return cmd_run_async(cmd, NULL, NULL);
@@ -75,7 +75,7 @@ Pid build_wasm_demo(const char *name)
 Pid build_term_demo(const char *name)
 {
     Cmd cmd = {
-        .line = cstr_array_make("clang", COMMON_CFLAGS, "-O2", "-o", CONCAT("./build/demos/", name, ".term"), "-DVC_PLATFORM=VC_TERM_PLATFORM", "-D_XOPEN_SOURCE=600", CONCAT("./demos/", name, ".c"), "-lm", NULL)
+        .line = cstr_array_make("/home/denis/sdk/gcc-13.2.0/bin/gcc", COMMON_CFLAGS, "-O2", "-o", CONCAT("./build/demos/", name, ".term"), "-DVC_PLATFORM=VC_TERM_PLATFORM", "-D_XOPEN_SOURCE=600", CONCAT("./demos/", name, ".c"), "-lm", NULL)
     };
     INFO("CMD: %s", cmd_show(cmd));
     return cmd_run_async(cmd, NULL, NULL);
@@ -84,7 +84,7 @@ Pid build_term_demo(const char *name)
 Pid build_sdl_demo(const char *name)
 {
     Cmd cmd = {
-        .line = cstr_array_make("clang", COMMON_CFLAGS, "-O2", "-o", CONCAT("./build/demos/", name, ".sdl"), "-DVC_PLATFORM=VC_SDL_PLATFORM", CONCAT("./demos/", name, ".c"), "-lm", "-lSDL2", NULL)
+        .line = cstr_array_make("/home/denis/sdk/gcc-13.2.0/bin/gcc", COMMON_CFLAGS, "-O2", "-o", CONCAT("./build/demos/", name, ".sdl"), "-DVC_PLATFORM=VC_SDL_PLATFORM", CONCAT("./demos/", name, ".c"), "-lm", "-lSDL2", NULL)
     };
     INFO("CMD: %s", cmd_show(cmd));
     return cmd_run_async(cmd, NULL, NULL);
@@ -126,8 +126,8 @@ void pids_wait(Pids pids)
 
 void build_vc_demo(const char *name, Pids *pids)
 {
-    da_append(pids, build_wasm_demo(name));
-    da_append(pids, build_term_demo(name));
+    // da_append(pids, build_wasm_demo(name));
+    // da_append(pids, build_term_demo(name));
     da_append(pids, build_sdl_demo(name));
 }
 
@@ -157,10 +157,6 @@ void build_all_vc_demos(void)
         }
     }
     pids_wait(pids);
-
-    for (size_t i = 0; i < names_sz; ++i) {
-        copy_file(CONCAT("./build/demos/", names[i], ".wasm"), CONCAT("./wasm/", names[i], ".wasm"));
-    }
 }
 
 void usage(const char *program)
