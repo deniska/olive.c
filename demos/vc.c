@@ -42,6 +42,7 @@ Olivec_Canvas vc_render(float dt);
 #define VC_WASM_PLATFORM 0
 #define VC_SDL_PLATFORM 1
 #define VC_TERM_PLATFORM 2
+#define VC_DOS_PLATFORM 3
 
 #if VC_PLATFORM == VC_SDL_PLATFORM
 #include <stdio.h>
@@ -561,6 +562,81 @@ int main(void)
 }
 #elif VC_PLATFORM == VC_WASM_PLATFORM
 // Do nothing because all the work is done in ../js/vc.js
+#elif VC_PLATFORM == VC_DOS_PLATFORM
+#include <assert.h>
+#include <dos.h>
+#include <dpmi.h>
+#include <go32.h>
+#include <sys/farptr.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+
+void set_mode_13h()
+{
+    __dpmi_regs r;
+
+    r.x.ax = 0x13;
+    __dpmi_int(0x10, &r);
+}
+
+void set_text_mode()
+{
+    __dpmi_regs r;
+
+    r.x.ax = 3;
+    __dpmi_int(0x10, &r);
+}
+
+void set_pal_color(int color, int red, int green, int blue)
+{
+    outportb(0x3C8, color);
+    outportb(0x3C9, red);
+    outportb(0x3C9, green);
+    outportb(0x3C9, blue);
+}
+
+void putpixel_13h(int x, int y, int color)
+{
+    _farpokeb(_dos_ds, 0xA0000+y*320+x, color);
+}
+
+#define VGA_WIDTH 320
+#define VGA_HEIGHT 200
+#define TOTAL_RGB (256*256*256)
+
+uint32_t screen_pixels[VGA_WIDTH*VGA_HEIGHT] = {0};
+
+int main(void)
+{
+    set_mode_13h();
+    for (int pal_color = 0; pal_color < 256; pal_color++) {
+        set_pal_color(pal_color,
+                (((pal_color & 0b11100000) >> 5) * 64 / 8) & 0x3f,
+                (((pal_color & 0b00011100) >> 2) * 64 / 8) & 0x3f,
+                (((pal_color & 0b00000011) >> 0) * 64 / 4) & 0x3f);
+    }
+    Olivec_Canvas screen = olivec_canvas(screen_pixels, VGA_WIDTH, VGA_HEIGHT, VGA_WIDTH);
+    while (true) {
+        if (kbhit()) break;
+        Olivec_Canvas oc = vc_render(1.f/30.f);
+        olivec_sprite_copy(screen, 0, 0, screen.width, screen.height, oc);
+        for (size_t y = 0; y < screen.height; y++) {
+            for (size_t x = 0; x < screen.width; x++) {
+                int r, g, b;
+                r = OLIVEC_RED(OLIVEC_PIXEL(screen, x, y)) * 8 / 256;
+                g = OLIVEC_GREEN(OLIVEC_PIXEL(screen, x, y)) * 8 / 256;
+                b = OLIVEC_BLUE(OLIVEC_PIXEL(screen, x, y)) * 4 / 256;
+                int pal_color = ((r << 5) | (g << 2) | (b << 0)) & 0xff;
+                putpixel_13h(x, y, pal_color);
+            }
+        }
+        delay(1000/30);
+    }
+    set_text_mode();
+    getch();
+    return 0;
+}
 #else
 #error "Unknown VC platform"
 #endif // VC_SDL_PLATFORM
