@@ -74,11 +74,18 @@ bool build_sdl_demo(Cmd *cmd, Procs *procs, const char *name)
     return cmd_run(cmd, .async = procs);
 }
 
+bool build_so_demo(Cmd *cmd, Procs *procs, const char *name)
+{
+    cmd_append(cmd, "clang", COMMON_CFLAGS, "-fPIC", "-rdynamic", "-shared", "-O2", "-o", temp_sprintf("./build/demos/%s.so", name), "-DVC_PLATFORM=VC_WASM_PLATFORM", temp_sprintf("./demos/%s.c", name), "-lm", NULL);
+    return cmd_run(cmd, .async = procs);
+}
+
 bool build_vc_demo(Cmd *cmd, Procs *procs, const char *name)
 {
     if (!build_wasm_demo(cmd, procs, name)) return false;
     if (!build_term_demo(cmd, procs, name)) return false;
     if (!build_sdl_demo(cmd, procs, name))  return false;
+    if (!build_so_demo(cmd, procs, name))  return false;
     return true;
 }
 
