@@ -4,7 +4,7 @@
 #define NOB_WARN_DEPRECATED
 #include "./dev-deps/nob.h"
 
-#define COMMON_CFLAGS "-Wall", "-Wextra", "-pedantic", "-ggdb", "-I.", "-I./build/", "-I./dev-deps/"
+#define COMMON_CFLAGS "-I.", "-I./build/", "-I./dev-deps/"
 
 bool build_tools(Cmd *cmd, Procs *procs)
 {
@@ -76,7 +76,7 @@ bool build_sdl_demo(Cmd *cmd, Procs *procs, const char *name)
 
 bool build_dos_demo(Cmd *cmd, Procs *procs, const char *name)
 {
-    cmd_append(cmd, "i586-pc-msdosdjgpp-gcc", COMMON_CFLAGS, "-Wno-missing-braces", "-O3", "-o", temp_sprintf("./build/demos/%s.exe", name), "-DVC_PLATFORM=VC_DOS_PLATFORM", temp_sprintf("./demos/%s.c", name), "-lm", NULL);
+    cmd_append(cmd, "owcc", "-bdos", "-std=c99", COMMON_CFLAGS, "-O3", "-o", temp_sprintf("./build/demos/%s.exe", name), "-DVC_PLATFORM=VC_DOS_PLATFORM", temp_sprintf("./demos/%s.c", name), "-lm", NULL);
     return cmd_run(cmd, .async = procs);
 }
 
