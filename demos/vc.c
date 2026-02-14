@@ -42,6 +42,7 @@ Olivec_Canvas vc_render(float dt);
 #define VC_WASM_PLATFORM 0
 #define VC_SDL_PLATFORM 1
 #define VC_TERM_PLATFORM 2
+#define VC_WIN_PLATFORM 3
 
 #if VC_PLATFORM == VC_SDL_PLATFORM
 #include <stdio.h>
@@ -561,6 +562,133 @@ int main(void)
 }
 #elif VC_PLATFORM == VC_WASM_PLATFORM
 // Do nothing because all the work is done in ../js/vc.js
+#elif VC_PLATFORM == VC_WIN_PLATFORM
+
+#include <windows.h>
+#undef near
+#undef far
+
+const char g_szClassName[] = "myWindowClass";
+
+Olivec_Canvas oc;
+
+void swap_rgba(void)
+{
+    for (int y = 0; y < oc.height; y++) {
+        for (int x = 0; x < oc.width; x++) {
+            uint32_t px = OLIVEC_PIXEL(oc, x, y);
+            OLIVEC_PIXEL(oc, x, y) = OLIVEC_RGBA(
+                OLIVEC_BLUE(px),
+                OLIVEC_GREEN(px),
+                OLIVEC_RED(px),
+                OLIVEC_ALPHA(px)
+            );
+        }
+    }
+}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch(msg) {
+        case WM_CREATE:
+            SetTimer(hwnd, 1, 16, NULL);
+            break;
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            break;
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            break;
+        case WM_TIMER:
+            vc_render(1.0f/60.0f);
+            swap_rgba();
+            InvalidateRect(hwnd, NULL, FALSE);
+            break;
+        case WM_PAINT:
+            BITMAPINFO bmi = {0};
+
+            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            bmi.bmiHeader.biWidth = oc.width;
+            bmi.bmiHeader.biHeight = -oc.height;
+            bmi.bmiHeader.biPlanes = 1;
+            bmi.bmiHeader.biBitCount = 32;
+            bmi.bmiHeader.biCompression = BI_RGB;
+
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+
+            StretchDIBits(
+                hdc,
+                0, 0, oc.width, oc.height,
+                0, 0, oc.width, oc.height,
+                oc.pixels,
+                &bmi,
+                DIB_RGB_COLORS,
+                SRCCOPY
+            );
+
+            EndPaint(hwnd, &ps);
+            break;
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    WNDCLASSEX wc;
+    HWND hwnd;
+    MSG Msg;
+
+    oc = vc_render(0.0f);
+    swap_rgba();
+
+    wc.cbSize        = sizeof(WNDCLASSEX);
+    wc.style         = 0;
+    wc.lpfnWndProc   = WndProc;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = 0;
+    wc.hInstance     = hInstance;
+    wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+    wc.lpszMenuName  = NULL;
+    wc.lpszClassName = g_szClassName;
+    wc.hIconSm       = LoadIcon(NULL, IDI_APPLICATION);
+
+    if(!RegisterClassEx(&wc)) {
+        MessageBox(NULL, "Window Registration Failed!", "Error!",
+            MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    DWORD style = WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX;
+
+    hwnd = CreateWindowEx(
+        WS_EX_CLIENTEDGE,
+        g_szClassName,
+        VC_TITLE,
+        style,
+        CW_USEDEFAULT, CW_USEDEFAULT, oc.width, oc.height,
+        NULL, NULL, hInstance, NULL);
+
+    if(hwnd == NULL) {
+        MessageBox(NULL, "Window Creation Failed!", "Error!",
+            MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    ShowWindow(hwnd, nCmdShow);
+    UpdateWindow(hwnd);
+
+    while(GetMessage(&Msg, NULL, 0, 0) > 0) {
+        TranslateMessage(&Msg);
+        DispatchMessage(&Msg);
+    }
+    return Msg.wParam;
+}
+
 #else
 #error "Unknown VC platform"
 #endif // VC_SDL_PLATFORM

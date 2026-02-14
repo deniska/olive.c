@@ -74,11 +74,18 @@ bool build_sdl_demo(Cmd *cmd, Procs *procs, const char *name)
     return cmd_run(cmd, .async = procs);
 }
 
+bool build_win_demo(Cmd *cmd, Procs *procs, const char *name)
+{
+    cmd_append(cmd, "i686-w64-mingw32-gcc", "-mwindows", "-std=c99", COMMON_CFLAGS, "-O3", "-o", temp_sprintf("./build/demos/%s.exe", name), "-DVC_PLATFORM=VC_WIN_PLATFORM", temp_sprintf("-DVC_TITLE=\"%s demo\"", name), temp_sprintf("./demos/%s.c", name), "-lm", NULL);
+    return cmd_run(cmd, .async = procs);
+}
+
 bool build_vc_demo(Cmd *cmd, Procs *procs, const char *name)
 {
     if (!build_wasm_demo(cmd, procs, name)) return false;
     if (!build_term_demo(cmd, procs, name)) return false;
     if (!build_sdl_demo(cmd, procs, name))  return false;
+    if (!build_win_demo(cmd, procs, name))  return false;
     return true;
 }
 
@@ -212,6 +219,10 @@ int main(int argc, char **argv)
                 const char *src_path = temp_sprintf("./build/demos/%s.wasm", name);
                 const char *dst_path = temp_sprintf("./wasm/%s.wasm", name);
                 if (!copy_file(src_path, dst_path)) return 1;
+            } else if (strcmp(platform, "win") == 0) {
+                if (!build_win_demo(&cmd, &procs, name)) return 1;
+                if (!procs_flush(&procs)) return 1;
+                if (argc <= 0) return 0;
             } else {
                 usage(program);
                 nob_log(ERROR, "unknown demo platform %s", platform);
