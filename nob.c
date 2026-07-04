@@ -4,7 +4,7 @@
 #define NOB_WARN_DEPRECATED
 #include "./dev-deps/nob.h"
 
-#define COMMON_CFLAGS "-Wall", "-Wextra", "-pedantic", "-ggdb", "-I.", "-I./build/", "-I./dev-deps/"
+#define COMMON_CFLAGS "-Wall", "-Wextra", "-pedantic", "-ggdb", "-I.", "-I./build/", "-I./dev-deps/", "-Wno-missing-braces"
 
 bool build_tools(Cmd *cmd, Procs *procs)
 {
@@ -74,23 +74,56 @@ bool build_sdl_demo(Cmd *cmd, Procs *procs, const char *name)
     return cmd_run(cmd, .async = procs);
 }
 
+bool build_retros32_demo(Cmd *cmd, Procs *procs, const char *name)
+{
+    char* obj_path = temp_sprintf("./build/demos/%s.build.o", name);
+    cmd_append(cmd, "gcc", "-m32",
+        "-nostdlib", "-nostdinc", "-ffreestanding", "-fno-pie", "-fno-stack-protector",
+        "-fno-builtin-function", "-fno-builtin", "-fno-omit-frame-pointer",
+        "-I", "/home/denis/strange/RetrOS-32/include",
+        "-I", "/home/denis/strange/RetrOS-32/apps",
+        "-I", "/home/denis/strange/RetrOS-32/apps/hello/include",
+        COMMON_CFLAGS, "-O2",
+        "-o", "arith64.o",
+        "-DVC_PLATFORM=VC_RETROS32_PLATFORM",
+        "-c", "arith64.c", NULL);
+    if (!cmd_run(cmd)) return false;
+    cmd_append(cmd, "gcc", "-m32",
+        "-nostdlib", "-nostdinc", "-ffreestanding", "-fno-pie", "-fno-stack-protector",
+        "-fno-builtin-function", "-fno-builtin", "-fno-omit-frame-pointer",
+        "-I", "/home/denis/strange/RetrOS-32/include",
+        "-I", "/home/denis/strange/RetrOS-32/apps",
+        "-I", "/home/denis/strange/RetrOS-32/apps/hello/include",
+        COMMON_CFLAGS, "-O2",
+        "-o", obj_path,
+        "-DVC_PLATFORM=VC_RETROS32_PLATFORM",
+        temp_sprintf("-DVC_TITLE=\"%s olive.c demo\"", name),
+        "-c", temp_sprintf("./demos/%s.c", name), NULL);
+    if (!cmd_run(cmd)) return false;
+    cmd_append(cmd, "ld", "-o", temp_sprintf("./build/demos/%s.exe.o", name), "-m", "elf_i386", "arith64.o", obj_path,
+            "-L/home/denis/strange/RetrOS-32/apps", "-lcore", "-lgraphic",
+            "-T", "/home/denis/strange/RetrOS-32/apps/utils/linker.ld", NULL);
+    return cmd_run(cmd);
+}
+
 bool build_vc_demo(Cmd *cmd, Procs *procs, const char *name)
 {
-    if (!build_wasm_demo(cmd, procs, name)) return false;
-    if (!build_term_demo(cmd, procs, name)) return false;
-    if (!build_sdl_demo(cmd, procs, name))  return false;
+    //if (!build_wasm_demo(cmd, procs, name)) return false;
+    //if (!build_term_demo(cmd, procs, name)) return false;
+    //if (!build_sdl_demo(cmd, procs, name))  return false;
+    if (!build_retros32_demo(cmd, procs, name))  return false;
     return true;
 }
 
 const char *vc_demo_names[] = {
-    "triangle",
+    //"triangle",
     "dots3d",
-    "squish",
-    "triangle3d",
-    "triangleTex",
-    "triangle3dTex",
-    "cup3d",
-    "teapot3d",
+    //"squish",
+    //"triangle3d",
+    //"triangleTex",
+    //"triangle3dTex",
+    //"cup3d",
+    //"teapot3d",
     "penger3d",
 };
 
@@ -237,7 +270,7 @@ int main(int argc, char **argv)
         if (!build_all_vc_demos(&cmd, &procs)) return 1;
         if (!procs_flush(&procs)) return 1;
 
-        if (!copy_all_vc_demos_to_build()) return 1;
+        // if (!copy_all_vc_demos_to_build()) return 1;
     }
 
     return 0;

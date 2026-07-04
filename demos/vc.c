@@ -30,7 +30,14 @@
 // ```
 
 #define OLIVEC_IMPLEMENTATION
+
+#define bool int
+#define false 0
+#define true (!false)
 #include <olive.c>
+#undef bool
+#undef true
+#undef false
 
 Olivec_Canvas vc_render(float dt);
 
@@ -42,6 +49,7 @@ Olivec_Canvas vc_render(float dt);
 #define VC_WASM_PLATFORM 0
 #define VC_SDL_PLATFORM 1
 #define VC_TERM_PLATFORM 2
+#define VC_RETROS32_PLATFORM 3
 
 #if VC_PLATFORM == VC_SDL_PLATFORM
 #include <stdio.h>
@@ -561,6 +569,114 @@ int main(void)
 }
 #elif VC_PLATFORM == VC_WASM_PLATFORM
 // Do nothing because all the work is done in ../js/vc.js
+#elif VC_PLATFORM == VC_RETROS32_PLATFORM
+#include <serial.h>
+#include <gfx/gfxlib.h>
+#include <lib/graphics.h>
+#include <libc.h>
+#include <colors.h>
+
+float sqrtf(float val) {
+    float ret;
+    __asm__ __volatile__ (
+        "fld %1\n"
+        "fsqrt\n"
+        "fstp %0\n"
+        : "=m" (ret)
+        : "m" (val)
+    );
+    return ret;
+}
+
+float sinf(float val) {
+    float ret;
+    __asm__ __volatile__ (
+        "fld %1\n"
+        "fsin\n"
+        "fstp %0\n"
+        : "=m" (ret)
+        : "m" (val)
+    );
+    return ret;
+}
+
+float cosf(float val) {
+    float ret;
+    __asm__ __volatile__ (
+        "fld %1\n"
+        "fcos\n"
+        "fstp %0\n"
+        : "=m" (ret)
+        : "m" (val)
+    );
+    return ret;
+}
+
+float atan2f(float y, float x) {
+    float ret;
+    __asm__ __volatile__ (
+        "fld %1\n"
+        "fld %2\n"
+        "fpatan\n"
+        "fstp %0\n"
+        : "=m" (ret)
+        : "m" (y), "m" (x)
+    );
+    return ret;
+}
+
+void sincosf(float x, float *sin, float *cos) {
+    float _sin, _cos;
+    __asm__ __volatile__ (
+        "fld %2\n"
+        "fsincos\n"
+        "fstp %0\n"
+        "fstp %1\n"
+        : "=m" (_sin), "=m" (_cos)
+        : "m" (x)
+    );
+    *sin = _sin;
+    *cos = _cos;
+}
+
+
+int main()
+{
+    Olivec_Canvas oc;
+    oc = vc_render(0.0f);
+    gfx_create_window(oc.width, oc.height, 1);
+    gfx_set_title(VC_TITLE);
+
+    struct gfx_event e;
+    while (1){
+        oc = vc_render(0.1f);
+        gfx_get_event(&e, GFX_EVENT_NONBLOCKING); /* alt: GFX_EVENT_NONBLOCKING */
+        for (int y = 0; y < oc.height; y++) {
+            for (int x = 0; x < oc.width; x++) {
+                uint32_t px = OLIVEC_PIXEL(oc, x, y);
+                gfx_draw_pixel(x, y, OLIVEC_RED(px));
+            }
+        }
+        switch (e.event)
+        {
+        case GFX_EVENT_RESOLUTION:
+            /* update screensize */
+            break;
+        case GFX_EVENT_EXIT:
+            /* exit */
+            return 0;
+        case GFX_EVENT_KEYBOARD:
+            /* keyboard event in e.data */
+            break;
+        case GFX_EVENT_MOUSE:
+            /* mouse event in e.data and e.data2 */
+            break;
+        }
+        sleep(100);
+
+    }
+    return 0;
+}
 #else
 #error "Unknown VC platform"
 #endif // VC_SDL_PLATFORM

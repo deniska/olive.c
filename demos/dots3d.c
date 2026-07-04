@@ -7,8 +7,8 @@ float cosf(float x);
 
 #define PI 3.14159265359
 
-#define WIDTH 960
-#define HEIGHT 720
+#define WIDTH 165
+#define HEIGHT 165
 #define BACKGROUND_COLOR 0xFF181818
 #define GRID_COUNT 10
 #define GRID_PAD 0.5/GRID_COUNT

@@ -22,9 +22,7 @@
 #ifndef OLIVE_C_
 #define OLIVE_C_
 
-#include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #ifndef OLIVECDEF
 #define OLIVECDEF static inline
